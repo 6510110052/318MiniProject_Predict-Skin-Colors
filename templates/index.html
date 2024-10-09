@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Skin Colors</title>
+    <link rel="icon" href="{{ url_for('static', filename='icon.jpg') }}" type="image/x-icon"> <!-- ใช้ url_for เพื่อเรียกใช้ไอคอน -->
+    <style>
+        /* การตั้งค่าพื้นหลังและฟอนต์ของเว็บ */
+        body {
+            font-family: 'Times New Roman', Georgia, serif;
+            background-image: url('https://marketplace.canva.com/EAFVfdZVBLI/1/0/1600w/canva-%E0%B8%AA%E0%B8%B5%E0%B8%9F%E0%B9%89%E0%B8%B2-%E0%B8%AA%E0%B8%B5%E0%B8%A1%E0%B9%88%E0%B8%A7%E0%B8%87-%E0%B8%AA%E0%B8%B5%E0%B8%8A%E0%B8%A1%E0%B8%9E%E0%B8%B9-%E0%B8%AA%E0%B8%B5%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B9%80%E0%B8%87%E0%B8%B4%E0%B8%99-%E0%B8%9E%E0%B8%B7%E0%B9%89%E0%B8%99%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%87-%E0%B8%A7%E0%B8%AD%E0%B8%A5%E0%B9%80%E0%B8%9B%E0%B9%80%E0%B8%9B%E0%B8%AD%E0%B8%A3%E0%B9%8C-%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B8%A7%E0%B9%80%E0%B8%95%E0%B8%AD%E0%B8%A3%E0%B9%8C-%E0%B8%99%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%87%E0%B8%B7%E0%B8%AD%E0%B8%81-Z-UN1rERQiI.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* ทำให้พื้นหลังเลื่อนไปพร้อมกับหน้าเว็บ */
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* เพิ่มสไตล์สำหรับการแสดงภาพที่อัปโหลด */
+        .image-preview {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;  /* จำกัดความสูงของภาพไม่เกิน 300px */
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* เพิ่มเงา */
+        }
+
+        /* การจัดการ layout ของคอนเทนต์ */
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.95); /* ทำพื้นหลังเป็นสีขาวโปร่งใส */
+            border-radius: 20px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1); /* เงาของกล่อง */
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        form {
+            margin-bottom: 40px;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* การตกแต่ง swatches */
+        .color-swatch {
+            display: inline-block;
+            width: 110px;
+            height: 110px;
+            margin: 10px;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* เพิ่มเงาที่ดูนุ่มนวลขึ้น */
+        }
+
+        .color-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 14px;
+            padding: 8px;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        .color-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Predict Skin Colors</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" id="file-input" required>
+            <button type="submit">Predict</button>
+        </form>
+        <div id="image-preview" class="image-preview"></div> <!-- ส่วนแสดงภาพตัวอย่าง -->
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // ฟังก์ชันเพื่อแสดงภาพตัวอย่างเมื่อผู้ใช้เลือกไฟล์
+        document.getElementById('file-input').addEventListener('change', function(event) {
+            const fileInput = event.target;
+            const previewContainer = document.getElementById('image-preview');
+            previewContainer.innerHTML = ''; // ล้างภาพตัวอย่างก่อนหน้า
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const imageUrl = URL.createObjectURL(file); // สร้าง URL ชั่วคราวสำหรับภาพ
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                previewContainer.appendChild(imgElement); // แสดงภาพใน container
+            }
+        });
+
+        document.getElementById('upload-form').onsubmit = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';  // ล้างผลลัพธ์ก่อนหน้า
+
+            if (data.error) {
+                resultDiv.innerHTML = `<p>${data.error}</p>`;
+            } else {
+                resultDiv.innerHTML = `<h2>เฉดสีที่คาดว่า: ${data.predicted_tone}</h2>`;
+                
+                const colorContainer = document.createElement('div');
+                colorContainer.className = 'color-container';
+                
+                data.suitable_colors.forEach(([color_hex, color_path]) => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = `#${color_hex}`;  // ตั้งค่าพื้นหลังให้เป็นสีตามโค้ดสี
+                    const colorLabel = document.createElement('div');
+                    colorLabel.className = 'color-name';
+                    colorLabel.innerText = `${color_hex}`;  // แสดงชื่อสีเป็นโค้ดสี
+                    swatch.appendChild(colorLabel);
+                    colorContainer.appendChild(swatch);
+                });
+                
+                resultDiv.appendChild(colorContainer);
+
+                // เพิ่มข้อความคำแนะนำหลังจากการแสดงผลลัพธ์
+                const recommendation = document.createElement('p');
+                recommendation.innerText = 'คุณสามารถใช้เฉดสีที่แนะนำนี้เป็นตัวเลือกในการเลือกซื้อเสื้อผ้า เครื่องประดับ หรือสิ่งของอื่น ๆ ที่เหมาะสมกับสีผิวของคุณได้';
+                resultDiv.appendChild(recommendation);
+            }
+        };
+    </script>
+</body>
+</html>
